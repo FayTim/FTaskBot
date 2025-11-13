@@ -26,8 +26,7 @@ async def get_settings(message : Message, state : FSMContext, bot: Bot):
                                    "Для начала давай впишем ФИО преподавателя")
 
     else:
-        msg = await message.answer("Хотите изменить настройки?🤔 \n"
-                                   "А вот хуй вам пока что, но Тимурка скоро сделает")
+        msg = await message.answer("Хотите изменить настройки?🤔 \n")
 
     chat_settings[chat_id] = {
         "teacher": None,
