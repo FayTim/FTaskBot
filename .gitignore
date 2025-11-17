@@ -1,3 +1,6 @@
 .venv
 .idea
-config.py
+.env
+src/config.py
+src/db/__pychache__/
+src/__pychache__/

@@ -1,11 +1,10 @@
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram import Router, F, Bot
 from aiogram.filters import Command
 
-from app.delete_msg import delete_last_bot_message
-from app.states import SettingsStates
+from src.app.delete_msg import delete_last_bot_message
+from src.app.states import SettingsStates
 
 router = Router(name="settings")
 

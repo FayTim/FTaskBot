@@ -1,14 +1,12 @@
 import asyncio
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery
-from dataclasses import dataclass, field
+from aiogram.types import Message
 from datetime import datetime
-from app.delete_msg import delete_last_bot_message
-from aiogram.fsm.state import StatesGroup, State
+from src.app.delete_msg import delete_last_bot_message
 from aiogram.fsm.context import FSMContext
-from app.models import Homework
-from app.states import HomeworkStates
+from src.app.models import Homework
+from src.app.states import HomeworkStates
 
 router = Router(name="homework")
 media_groups_temp = {}
