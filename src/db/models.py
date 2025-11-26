@@ -3,7 +3,6 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Text, BigInteger, Ti
 from sqlalchemy.orm import relationship, declarative_base, Mapped, mapped_column
 from .database import Base
 
-# base = declarative_base()
 metadata_obj = MetaData()
 
 

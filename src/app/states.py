@@ -7,5 +7,7 @@ class HomeworkStates(StatesGroup):
 
 class SettingsStates(StatesGroup):
     teacher = State()
+    teacher_email = State()
     subject = State()
-    group_list = State()
+    group_number = State()
+    subgroup_number = State()

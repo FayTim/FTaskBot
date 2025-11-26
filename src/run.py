@@ -12,12 +12,7 @@ dp = Dispatcher()
 #     await message.answer("Работает?")
 
 
-async def main():
-    print(1)
-    dp.include_router(test_router)
-    dp.include_router(settings_router)
-    dp.include_router(homework_router)
-    await dp.start_polling(bot)
+
 # if __name__ == "__main__":
 #     asyncio.run(main())
     # from datetime import datetime
