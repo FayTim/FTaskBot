@@ -14,8 +14,10 @@ async def main():
     dp.include_router(test_router)
     dp.include_router(settings_router)
     dp.include_router(homework_router)
+    await create_tables()
+    print(52)
     await dp.start_polling(bot)
-    # create_tables()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

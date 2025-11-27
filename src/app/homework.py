@@ -7,6 +7,7 @@ from src.app.delete_msg import delete_last_bot_message
 from aiogram.fsm.context import FSMContext
 from src.app.models import Homework
 from src.app.states import HomeworkStates
+from src.db.metods_db_homework import send_homework
 
 router = Router(name="homework")
 media_groups_temp = {}
@@ -52,15 +53,16 @@ async def get_deadline(message : Message, state : FSMContext):
             raise ValueError("Дедлайн в прошлое?")
         hw.deadline = deadline_date.strftime("%d.%m.%y %H:%M")
         await state.update_data(homework=hw.to_dict())
+        await send_homework(message.chat.id, hw.text, deadline_date)
         await message.answer(
             f"Домашнее задание сохранено!\n"
-            f"Предмет: {hw.subject}\n"
             f"Текст: {hw.text if hw.text else 'Нет'}\n"
             f"Дедлайн: {hw.deadline}\n\n"
         )
         await state.update_data(last_bot_message_id=None)
         await message.delete()
-    except Exception:
+    except Exception as e:
+        print(e)
         msg = await message.answer("Что-то не то с дедлайном(")
         await state.update_data(last_bot_message_id=msg.message_id)
         await message.delete()

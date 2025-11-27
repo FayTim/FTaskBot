@@ -14,7 +14,7 @@ class Students(Base):
     # tg_id = Column(Text, primary_key=True)
     group_id: Mapped[int] = mapped_column(ForeignKey("groups.group_id"))
     # group_id = Column(ForeignKey("groups.group_id"))
-    # auth: Mapped["Student_Auth"] = relationship(back_populates="student", uselist=False)
+    auth: Mapped["Student_Auth"] = relationship(back_populates="student", uselist=False)
     group: Mapped["Groups"] = relationship(back_populates="students")
 
 
@@ -32,6 +32,8 @@ class Student_Auth(Base):
 class Subjects(Base):
     __tablename__ = "subjects"
 
+    chat_id: Mapped[int] = mapped_column()
+
     subject_id: Mapped[int] = mapped_column(primary_key=True)
     # subject_id = Column(BigInteger, primary_key=True)
     subject_name: Mapped[str] = mapped_column()
@@ -47,7 +49,7 @@ class Subjects(Base):
 
     teacher: Mapped["Teachers"] = relationship(back_populates="subjects")
     group: Mapped["Groups"] = relationship(back_populates="subjects")
-    homeworks: Mapped[list["Homeworks"]] = relationship(back_populates="subject")
+    # homeworks: Mapped[list["Homeworks"]] = relationship(back_populates="subject")
 
 
 class Groups(Base):
@@ -81,9 +83,10 @@ class Teachers(Base):
 class Homeworks(Base):
     __tablename__ = "homeworks"
 
-    homework_id: Mapped[int] = mapped_column(primary_key=True)
+    chat_id: Mapped[int] = mapped_column()
     # homework_id = Column(BigInteger, primary_key=True)
-    subject_id: Mapped[int] = mapped_column(ForeignKey("subjects.subject_id"))
+    homework_id: Mapped[int] = mapped_column(primary_key=True)
+    subject_name: Mapped[str] = mapped_column()
     # subject_id = Column(ForeignKey("subjects.subject_id"))
     text_homework: Mapped[str] = mapped_column()
     # text_homework = Column(Text, nullable=False)
@@ -92,7 +95,7 @@ class Homeworks(Base):
     group_id: Mapped[int] = mapped_column(ForeignKey("groups.group_id"))
     # group_id = Column(ForeignKey("groups.group_id"))
 
-    subject: Mapped["Subjects"] = relationship(back_populates="homeworks")
+    # subject: Mapped["Subjects"] = relationship(back_populates="homeworks")
     group: Mapped["Groups"] = relationship(back_populates="homeworks")
 
 
