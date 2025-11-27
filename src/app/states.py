@@ -11,4 +11,5 @@ class SettingsStates(StatesGroup):
     subject = State()
     group_number = State()
     subgroup_number = State()
+    regulation_link = State()
     menu = State()

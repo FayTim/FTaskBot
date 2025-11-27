@@ -42,9 +42,9 @@ class Subjects(Base):
     # teacher_id = Column(ForeignKey())
     group_id: Mapped[int] = mapped_column(ForeignKey("groups.group_id"))
     # group_id = Column(ForeignKey("groups.group_id"))
-    link_report: Mapped[str | None] = mapped_column()
+    # link_report: Mapped[str | None] = mapped_column()
     # link_report = Column(Text, nullable=True)
-    regulation: Mapped[str | None] = mapped_column()
+    regulation_link: Mapped[str | None] = mapped_column()
     # regulation = Column(Text, nullable=True)
 
     teacher: Mapped["Teachers"] = relationship(back_populates="subjects")

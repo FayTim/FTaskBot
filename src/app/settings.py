@@ -3,7 +3,7 @@ import re
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram import Router, F
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from src.app.delete_msg import delete_last_bot_message
 from src.app.states import SettingsStates
 
@@ -151,6 +151,7 @@ async def get_group_number(message: Message, state: FSMContext):
 
     await state.update_data(group_number=group)
     await delete_last_bot_message(message, state)
+
     if edit_field == "group_number":
         chat_id = message.chat.id
         await update_group_number_in_db(chat_id, group)
@@ -191,18 +192,45 @@ async def get_subgroup_number(message: Message, state: FSMContext):
         await state.set_state(SettingsStates.menu)
         await message.delete()
     else:
-        chat_id = message.chat.id
+        msg = await message.answer("И последняя настройка\n"
+                                   "Введите ссылку на регламент по предмету")
+        await state.update_data(last_bot_message_id=msg.message_id)
+        await state.set_state(SettingsStates.regulation_link)
+        await message.delete()
+
+@router.message(F.text, SettingsStates.regulation_link)
+async def get_regulation(message: Message, state: FSMContext):
+    regulation_link = message.text.strip()
+    if not re.match(r'^[a-zA-Z][a-zA-Z0-9+.-]*://', regulation_link):
+        msg = await message.answer("Что не так в ссылке на регламент(\n"
+                                   f"Ваша ссылка: {regulation_link}\n"
+                                   f"Попробуйте снова")
+        await delete_last_bot_message(message, state)
+        await state.update_data(last_bot_message_id=msg.message_id)
+        await message.delete()
+        return
+
+    data = await state.get_data()
+    edit_field = data.get("edit_field")
+
+    await state.update_data(regulation_link=regulation_link)
+    await delete_last_bot_message(message, state)
+
+    chat_id = message.chat.id
+    if edit_field == "regulation_link":
+        await update_regulation_db(chat_id, regulation_link)
+        msg = await message.answer("Ссылка на регламент обновлена ✅")
+        await state.update_data(last_bot_message_id=msg.message_id, edit_field=None)
+        await state.set_state(SettingsStates.menu)
+        await message.delete()
+    else:
         data = await state.get_data()
-        settings[chat_id] = data
-        print(settings)
         await save_chat_settings(chat_id, data)
 
         msg = await message.answer("Спасибо! Настройки завершены 😊")
         await state.update_data(last_bot_message_id=msg.message_id)
         await state.clear()
         await message.delete()
-
-
 
 def settings_menu_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
@@ -212,8 +240,11 @@ def settings_menu_kb() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="📚 Название предмета", callback_data="edit_subject")],
             [InlineKeyboardButton(text="👥 Номер группы", callback_data="edit_group_number")],
             [InlineKeyboardButton(text="👤 Номер подгруппы", callback_data="edit_subgroup_number")],
+            [InlineKeyboardButton(text="📝 Регламент", callback_data="edit_regulation")],
+            [InlineKeyboardButton(text="⬅️ Назад", callback_data="cancel_settings")],
         ]
     )
+
 
 @router.callback_query(SettingsStates.menu, F.data == "edit_teacher")
 async def start_edit_teacher(callback: CallbackQuery, state: FSMContext):
@@ -271,3 +302,20 @@ async def start_edit_subgroup_number(callback: CallbackQuery, state: FSMContext)
     )
     await state.update_data(last_bot_message_id=msg.message_id, edit_field="subgroup_number")
     await state.set_state(SettingsStates.subgroup_number)
+
+@router.callback_query(SettingsStates.menu, F.data == "edit_regulation")
+async def start_edit_regulation(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await delete_last_bot_message(callback.message, state)
+
+    msg = await callback.message.answer(
+        "Введите новую ссылку на регламент"
+    )
+    await state.update_data(last_bot_message_id=msg.message_id, edit_field="regulation_link")
+    await state.set_state(SettingsStates.regulation_link)
+
+@router.callback_query(SettingsStates.menu, F.data == "cancel_settings")
+async def settings_back(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await callback.message.delete()
+    await state.clear()

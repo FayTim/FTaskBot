@@ -8,6 +8,7 @@ async def save_chat_settings(chat_id, data):
     subject_name = data["subject"]
     group_number = data["group_number"]
     subgroup_number = data["subgroup_number"]
+    regulation_link = data["regulation"]
 
     async with async_session_factory() as session:
         result = await session.execute(
@@ -45,8 +46,7 @@ async def save_chat_settings(chat_id, data):
             subject_name=subject_name,
             teacher_id=teacher.teacher_id,
             group_id=group.group_id,
-            link_report=None,
-            regulation=None,
+            regulation_link=regulation_link,
         )
         session.add(subject)
 
@@ -111,4 +111,13 @@ async def update_subgroup_number_in_db(chat_id, new_subgroup_number):
         )
         subgroup = result.scalar_one_or_none()
         subgroup.subgroup_number = new_subgroup_number
+        await session.commit()
+
+async def update_regulation_db(chat_id, new_regulation_link):
+    async with async_session_factory() as session:
+        result = await session.execute(
+            select(Subjects).where(Subjects.chat_id == chat_id)
+        )
+        regulation = result.scalar_one_or_none()
+        regulation.regulation_link = new_regulation_link
         await session.commit()
