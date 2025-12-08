@@ -1,9 +1,5 @@
 from aiogram import Bot, Dispatcher
-import asyncio
-from src.app.settings import router as settings_router
-from src.app.homework import router as homework_router
-from src.app.test import router as test_router
-from src.config import TOKEN
+from config import TOKEN
 bot = Bot(TOKEN)
 dp = Dispatcher()
 

@@ -3,7 +3,7 @@ import re
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram import Router, F
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import Command
 from src.app.delete_msg import delete_last_bot_message
 from src.app.states import SettingsStates
 

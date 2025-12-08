@@ -1,4 +1,4 @@
-from sqlalchemy import select, update
+from sqlalchemy import select
 from src.db.database import async_session_factory
 from src.db.models import Teachers, Groups, Subjects
 
@@ -8,7 +8,7 @@ async def save_chat_settings(chat_id, data):
     subject_name = data["subject"]
     group_number = data["group_number"]
     subgroup_number = data["subgroup_number"]
-    regulation_link = data["regulation"]
+    regulation_link = data["regulation_link"]
 
     async with async_session_factory() as session:
         result = await session.execute(

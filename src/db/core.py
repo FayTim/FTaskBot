@@ -1,5 +1,5 @@
 from .models import Base
-from .database import sync_engine, async_engine
+from .database import async_engine
 
 async def create_tables():
     async with async_engine.begin() as conn:
