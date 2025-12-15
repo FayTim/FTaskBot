@@ -74,5 +74,14 @@ class Homeworks(Base):
 
     group: Mapped["Groups"] = relationship(back_populates="homeworks")
 
+class UsersWithMetric(Base):
+    __tablename__ = "users_with_metrics"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tg_id: Mapped[str] = mapped_column()
+    count_all_tasks: Mapped[int] = mapped_column()
+    count_solved_tasks: Mapped[int] = mapped_column()
+    count_skip_tasks: Mapped[int] = mapped_column()
+
 
 

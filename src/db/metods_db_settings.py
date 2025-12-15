@@ -121,3 +121,23 @@ async def update_regulation_db(chat_id, new_regulation_link):
         regulation = result.scalar_one_or_none()
         regulation.regulation_link = new_regulation_link
         await session.commit()
+
+async def check_db_exist_course(subject_name, group_number, subgroup_number):
+    async with async_session_factory() as session:
+        group_number = f"ФТ-{group_number}"
+        subgroup_number = str(subgroup_number)
+        result = await session.execute(
+            select(Teachers.name_teacher, Teachers.email_teacher, Subjects.regulation_link)
+            .join(Subjects,
+                  Subjects.teacher_id == Teachers.teacher_id
+            )
+            .join(Groups,
+                  (Groups.group_number == group_number) & (Groups.subgroup_number == subgroup_number)
+            )
+            .where(Subjects.subject_name == subject_name)
+        )
+        course = result.first()
+        if course is None:
+            return None
+        name, email, regulation_link = course
+        return (name, email, regulation_link)

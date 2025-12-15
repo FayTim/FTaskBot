@@ -17,90 +17,18 @@ async def get_settings(message : Message, state : FSMContext):
     if await get_settings_chat(chat_id) is None:
         msg = await message.answer("Привет👋 \n"
                                    "Добро пожаловать в настройки бота \n"
-                                   "Для начала давай впишем ФИО преподавателя👨‍🏫")
+                                   "Для начала, давай впишем название предмета, который вы изучаете")
 
-        await state.set_state(SettingsStates.teacher)
+        await state.set_state(SettingsStates.subject)
         await state.update_data(last_bot_message_id=msg.message_id, edit_field=None)
         await message.delete()
     else:
         msg = await message.answer("Настройки для этого чата уже есть\n"
                                    "Что вы хотите изменить?",
                                    reply_markup=settings_menu_kb())
-        await state.set_state(SettingsStates.menu)  # добавь новое состояние menu
+        await state.set_state(SettingsStates.menu)
         await state.update_data(last_bot_message_id=msg.message_id, edit_field=None)
         await message.delete()
-
-@router.message(F.text, SettingsStates.teacher)
-async def get_teacher(message : Message, state : FSMContext):
-    teacher = message.text.strip()
-    if not re.fullmatch(r'([А-ЯЁа-яё]+) ([А-ЯЁа-яё]+) ([А-ЯЁа-яё]+)', teacher):
-        msg = await message.answer("Что-то не то с вводом(\n"
-                                   f"Ваш ввод: {teacher}\n"
-                                   "Введите пожалуйста ФИО, ещё раз")
-        await delete_last_bot_message(message, state)
-        await state.update_data(last_bot_message_id=msg.message_id)
-        await message.delete()
-        return
-
-    data = await state.get_data()
-    edit_field = data.get("edit_field")
-
-    await state.update_data(teacher=teacher)
-    await delete_last_bot_message(message, state)
-
-    if edit_field == "teacher":
-        chat_id = message.chat.id
-        await update_teacher_in_db(chat_id, new_teacher_name=teacher)  # функция обновления в БД
-
-        msg = await message.answer(
-            "ФИО преподавателя обновлено ✅"
-        )
-        await state.update_data(last_bot_message_id=msg.message_id,
-                               edit_field=None)
-        await state.set_state(SettingsStates.menu)
-        await message.delete()
-    else:
-        msg = await message.answer("Давай также впишем контакт преподавателя 📧 (это может быть ник в телеграмм или почта, или что-то еще)")
-
-        await state.update_data(last_bot_message_id=msg.message_id)
-        await state.set_state(SettingsStates.teacher_email)
-        await message.delete()
-    print(f"[FSM] state={await state.get_state()} data={await state.get_data()}\n")
-
-@router.message(F.text, SettingsStates.teacher_email)
-async def get_teacher_email(message : Message, state : FSMContext):
-    email = message.text
-    if (not re.fullmatch(r'(\S+)@(\w+)\.(\w{2,3})', email) and
-            not re.fullmatch(r'^(\+7|8)\d{10}', email) and
-            not re.fullmatch(r'@(\w+)', email)):
-        msg = await message.answer("Некорректный контакт( \n"
-                                   f"Ваш ввод: {email}\n"
-                                   f"Попробуйте еще раз")
-        await delete_last_bot_message(message, state)
-        await state.update_data(last_bot_message_id=msg.message_id)
-        await message.delete()
-        return
-
-    data = await state.get_data()
-    edit_field = data.get("edit_field")
-
-    await state.update_data(teacher_email=email)
-    await delete_last_bot_message(message, state)
-
-    if edit_field == "teacher_email":
-        chat_id = message.chat.id
-        await update_teacher_email_in_db(chat_id, teacher_email=email)
-        msg = await message.answer("Контакт преподавателя обновлен ✅")
-        await state.update_data(last_bot_message_id=msg.message_id, edit_field=None)
-        await state.set_state(SettingsStates.menu)
-        await message.delete()
-    else:
-        msg = await message.answer("Хорошо, теперь впишем название предмета, который вы изучаете 📚")
-
-        await state.update_data(last_bot_message_id=msg.message_id)
-        await state.set_state(SettingsStates.subject)
-        await message.delete()
-
 
 @router.message(F.text, SettingsStates.subject)
 async def get_subject(message: Message, state: FSMContext):
@@ -145,7 +73,6 @@ async def get_group_number(message: Message, state: FSMContext):
         await state.update_data(last_bot_message_id=msg.message_id)
         await message.delete()
         return
-
     data = await state.get_data()
     edit_field = data.get("edit_field")
 
@@ -192,8 +119,94 @@ async def get_subgroup_number(message: Message, state: FSMContext):
         await state.set_state(SettingsStates.menu)
         await message.delete()
     else:
+        data = await state.get_data()
+        subject_name = data.get("subject")
+        int_group_number = int(data.get("group_number").split("-")[1])
+        int_subgroup_number = int(data.get("subgroup_number"))
+        possible_settings = await check_db_exist_course(subject_name, int_group_number, int_subgroup_number)
+        if possible_settings is None:
+            msg = await message.answer("Давай теперь впишем ФИО преподавателя")
+            await state.update_data(last_bot_message_id=msg.message_id)
+            await state.set_state(SettingsStates.teacher)
+            await message.delete()
+        else:
+            name_teacher, email_teacher, regulation_link = possible_settings
+            msg = await message.answer("Это случайно не то что ты ищешь? \n"
+                                       "КУРС:\n"
+                                       f"Предмет📚: {subject_name}\n"
+                                       f"Для группы👥: ФТ-{int_group_number}{"-"+str(int_subgroup_number) if int_subgroup_number != 0 else ""}\n"
+                                       f"Преподаватель👨‍🏫: {name_teacher}\n"
+                                       f"Контакт преподавателя📧: {email_teacher}\n"
+                                       f"Регламент📝: {regulation_link}")
+
+@router.message(F.text, SettingsStates.teacher)
+async def get_teacher(message : Message, state : FSMContext):
+    teacher = message.text.strip()
+    if not re.fullmatch(r'([А-ЯЁа-яё]+) ([А-ЯЁа-яё]+) ([А-ЯЁа-яё]+)', teacher):
+        msg = await message.answer("Что-то не то с вводом ФИО преподавателя(\n"
+                                   f"Ваш ввод: {teacher}\n"
+                                   "Введите пожалуйста ещё раз")
+        await delete_last_bot_message(message, state)
+        await state.update_data(last_bot_message_id=msg.message_id)
+        await message.delete()
+        return
+
+    data = await state.get_data()
+    edit_field = data.get("edit_field")
+
+    await state.update_data(teacher=teacher)
+    await delete_last_bot_message(message, state)
+
+    if edit_field == "teacher":
+        chat_id = message.chat.id
+        await update_teacher_in_db(chat_id, new_teacher_name=teacher)
+
+        msg = await message.answer(
+            "ФИО преподавателя обновлено ✅"
+        )
+        await state.update_data(last_bot_message_id=msg.message_id,
+                               edit_field=None)
+        await state.set_state(SettingsStates.menu)
+        await message.delete()
+    else:
+        msg = await message.answer("Давай также впишем контакт преподавателя 📧 (это может быть ник в телеграмм или почта, или что-то еще)")
+
+        await state.update_data(last_bot_message_id=msg.message_id)
+        await state.set_state(SettingsStates.teacher_email)
+        await message.delete()
+    print(f"[FSM] state={await state.get_state()} data={await state.get_data()}\n")
+
+@router.message(F.text, SettingsStates.teacher_email)
+async def get_teacher_email(message : Message, state : FSMContext):
+    email = message.text
+    if (not re.fullmatch(r'(\S+)@(\w+)\.(\w{2,3})', email) and
+            not re.fullmatch(r'^(\+7|8)\d{10}', email) and
+            not re.fullmatch(r'@(\w+)', email)):
+        msg = await message.answer("Некорректный контакт( \n"
+                                   f"Ваш ввод: {email}\n"
+                                   f"Попробуйте еще раз")
+        await delete_last_bot_message(message, state)
+        await state.update_data(last_bot_message_id=msg.message_id)
+        await message.delete()
+        return
+
+    data = await state.get_data()
+    edit_field = data.get("edit_field")
+
+    await state.update_data(teacher_email=email)
+    await delete_last_bot_message(message, state)
+
+    if edit_field == "teacher_email":
+        chat_id = message.chat.id
+        await update_teacher_email_in_db(chat_id, teacher_email=email)
+        msg = await message.answer("Контакт преподавателя обновлен ✅")
+        await state.update_data(last_bot_message_id=msg.message_id, edit_field=None)
+        await state.set_state(SettingsStates.menu)
+        await message.delete()
+    else:
         msg = await message.answer("И последняя настройка\n"
                                    "Введите ссылку на регламент по предмету")
+
         await state.update_data(last_bot_message_id=msg.message_id)
         await state.set_state(SettingsStates.regulation_link)
         await message.delete()

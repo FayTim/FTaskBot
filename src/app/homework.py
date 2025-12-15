@@ -53,10 +53,20 @@ async def get_deadline(message : Message, state : FSMContext):
     data = await state.get_data()
     hw = Homework(**data.get("homework"))
     deadline_date = None
+    deadline = message.text
     try:
-        deadline_date = datetime.strptime(message.text, "%H:%M %d.%m.%y")
+        deadline_date = datetime.strptime(deadline, "%H:%M %d.%m.%y")
         if deadline_date < datetime.now():
-            raise ValueError("Дедлайн в прошлое?")
+            msg = await message.answer(f"Дедлайн в прошлое?\n"
+                                       f"Ваш ввод: {deadline} \n"
+                                       f"Формат дедлайна: hh:mm dd.mm.yy \n"
+                                       f"Попробуйте снова😔")
+            await state.update_data(last_bot_message_id=msg.message_id)
+            await message.delete()
+            # TODO: сильно под вопросом что тут должно быть
+            return
+
+
         hw.deadline = deadline_date.strftime("%d.%m.%y %H:%M")
         await state.update_data(homework=hw.to_dict())
         await send_homework(message.chat.id, hw.text, deadline_date)
@@ -70,6 +80,8 @@ async def get_deadline(message : Message, state : FSMContext):
         await message.delete()
     except Exception as e:
         msg = await message.answer(f"Что-то не то с дедлайном(\n"
-                                   f"Ваш ввод: {deadline_date}")
+                                   f"Ваш ввод: {deadline} \n"
+                                   f"Формат дедлайна: hh:mm dd.mm.yy \n"
+                                   f"Попробуйте снова😔")
         await state.update_data(last_bot_message_id=msg.message_id)
         await message.delete()
