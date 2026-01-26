@@ -68,6 +68,7 @@ class Homeworks(Base):
     chat_id: Mapped[int] = mapped_column(BigInteger)
     homework_id: Mapped[int] = mapped_column(primary_key=True)
     subject_name: Mapped[str] = mapped_column()
+    title_homework: Mapped[str] = mapped_column()
     text_homework: Mapped[str] = mapped_column()
     deadline: Mapped[datetime] = mapped_column()
     group_id: Mapped[int] = mapped_column(ForeignKey("groups.group_id"))

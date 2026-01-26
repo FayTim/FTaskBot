@@ -52,6 +52,25 @@ async def save_chat_settings(chat_id, data):
 
         await session.commit()
 
+async def update_chat_settings(chat_id, data):
+    subject_name = data["subject"]
+    group_number = data["group_number"]
+    subgroup_number = data["subgroup_number"]
+    print("Много вопросов к определению всего")
+    async with async_session_factory() as session:
+        result = await session.execute(
+            select(Subjects)
+            .join(Groups, Subjects.group_id == Groups.group_id)
+            .where(Subjects.subject_name == subject_name,
+                   Groups.group_number == group_number,
+                   Groups.subgroup_number == subgroup_number,
+                   Subjects.chat_id == 0)
+        )
+        print("Люди - пешки")
+        subject = result.scalar_one_or_none()
+        subject.chat_id = chat_id
+        await session.commit()
+
 async def get_settings_chat(chat_id):
     async with async_session_factory() as session:
         result = await session.execute(
@@ -59,6 +78,22 @@ async def get_settings_chat(chat_id):
         )
         check_chat_id = result.scalar_one_or_none()
         return check_chat_id
+
+async def get_teacher_by_id(teacher_id):
+    async with async_session_factory() as session:
+        result = await session.execute(
+            select(Teachers).where(Teachers.teacher_id == teacher_id)
+        )
+        teacher = result.scalar_one_or_none()
+        return teacher
+
+async def get_group_by_id(group_id):
+    async with async_session_factory() as session:
+        result = await session.execute(
+            select(Groups).where(Groups.group_id == group_id)
+        )
+        group = result.scalar_one_or_none()
+        return group
 
 async def update_teacher_in_db(chat_id, new_teacher_name):
     async with async_session_factory() as session:
@@ -106,7 +141,7 @@ async def update_subgroup_number_in_db(chat_id, new_subgroup_number):
     async with async_session_factory() as session:
         result = await session.execute(
             select(Groups)
-            .join(Subjects, Subjects.teacher_id == Groups.group_id)
+            .join(Subjects, Subjects.group_id == Groups.group_id)
             .where(Subjects.chat_id == chat_id)
         )
         subgroup = result.scalar_one_or_none()
@@ -132,11 +167,16 @@ async def check_db_exist_course(subject_name, group_number, subgroup_number):
                   Subjects.teacher_id == Teachers.teacher_id
             )
             .join(Groups,
-                  (Groups.group_number == group_number) & (Groups.subgroup_number == subgroup_number)
+                  Groups.group_id == Subjects.group_id
             )
-            .where(Subjects.subject_name == subject_name)
+            .where(Subjects.subject_name == subject_name,
+                   Groups.group_number == group_number,
+                   Groups.subgroup_number == subgroup_number,
+                   Subjects.chat_id == 0)
         )
         course = result.first()
+        print(course is None)
+        print(course)
         if course is None:
             return None
         name, email, regulation_link = course

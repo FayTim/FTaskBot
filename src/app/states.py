@@ -2,6 +2,7 @@ from aiogram.fsm.state import StatesGroup, State
 
 
 class HomeworkStates(StatesGroup):
+    homework_title = State()
     homework_data = State()
     deadline = State()
 
